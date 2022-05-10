@@ -28,7 +28,11 @@ from fastapi.dependencies.utils import (
     solve_dependencies,
 )
 from fastapi.encoders import DictIntStrAny, SetIntStr, jsonable_encoder
-from fastapi.exceptions import RequestValidationError, WebSocketRequestValidationError
+from fastapi.exceptions import (
+    RequestValidationError,
+    ResponseValidationError,
+    WebSocketRequestValidationError,
+)
 from fastapi.openapi.constants import STATUS_CODES_WITH_NO_BODY
 from fastapi.types import DecoratedCallable
 from fastapi.utils import (
@@ -38,7 +42,7 @@ from fastapi.utils import (
     get_value_or_default,
 )
 from pydantic import BaseModel
-from pydantic.error_wrappers import ErrorWrapper, ValidationError
+from pydantic.error_wrappers import ErrorWrapper
 from pydantic.fields import ModelField, Undefined
 from starlette import routing
 from starlette.concurrency import run_in_threadpool
@@ -107,6 +111,7 @@ def _prepare_response_content(
 async def serialize_response(
     *,
     field: Optional[ModelField] = None,
+    request_content: Any,
     response_content: Any,
     include: Optional[Union[SetIntStr, DictIntStrAny]] = None,
     exclude: Optional[Union[SetIntStr, DictIntStrAny]] = None,
@@ -135,7 +140,11 @@ async def serialize_response(
         elif isinstance(errors_, list):
             errors.extend(errors_)
         if errors:
-            raise ValidationError(errors, field.type_)
+            raise ResponseValidationError(
+                errors,
+                request_body=request_content,
+                response_body=response_content,
+            )
         return jsonable_encoder(
             value,
             include=include,
@@ -234,6 +243,7 @@ def get_request_handler(
                 return raw_response
             response_data = await serialize_response(
                 field=response_field,
+                request_content=body,
                 response_content=raw_response,
                 include=response_model_include,
                 exclude=response_model_exclude,

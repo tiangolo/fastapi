@@ -18,6 +18,7 @@ class HTTPException(StarletteHTTPException):
 
 
 RequestErrorModel: Type[BaseModel] = create_model("Request")
+ResponseErrorModel: Type[BaseModel] = create_model("Response")
 WebSocketErrorModel: Type[BaseModel] = create_model("WebSocket")
 
 
@@ -31,6 +32,19 @@ class RequestValidationError(ValidationError):
     def __init__(self, errors: Sequence[ErrorList], *, body: Any = None) -> None:
         self.body = body
         super().__init__(errors, RequestErrorModel)
+
+
+class ResponseValidationError(ValidationError):
+    def __init__(
+        self,
+        errors: Sequence[ErrorList],
+        *,
+        request_body: Any = None,
+        response_body: Any = None,
+    ) -> None:
+        self.request_body = request_body
+        self.response_body = response_body
+        super().__init__(errors, ResponseErrorModel)
 
 
 class WebSocketRequestValidationError(ValidationError):
