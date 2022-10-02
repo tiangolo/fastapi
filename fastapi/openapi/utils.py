@@ -16,7 +16,11 @@ from fastapi._compat import (
 )
 from fastapi.datastructures import DefaultPlaceholder
 from fastapi.dependencies.models import Dependant
-from fastapi.dependencies.utils import get_flat_dependant, get_flat_params
+from fastapi.dependencies.utils import (
+    get_flat_dependant,
+    get_flat_params,
+    get_resolved_dependant,
+)
 from fastapi.encoders import jsonable_encoder
 from fastapi.openapi.constants import METHODS_WITH_BODY, REF_PREFIX, REF_TEMPLATE
 from fastapi.openapi.models import OpenAPI
@@ -238,8 +242,17 @@ def get_openapi_path(
             operation = get_openapi_operation_metadata(
                 route=route, method=method, operation_ids=operation_ids
             )
+            dependency_overrides = None
+            if route.dependency_overrides_provider:
+                dependency_overrides = (
+                    route.dependency_overrides_provider.dependency_overrides
+                )
+            dependant = get_resolved_dependant(
+                dependant=route.dependant,
+                dependency_overrides=dependency_overrides,
+            )
             parameters: List[Dict[str, Any]] = []
-            flat_dependant = get_flat_dependant(route.dependant, skip_repeats=True)
+            flat_dependant = get_flat_dependant(dependant, skip_repeats=True)
             security_definitions, operation_security = get_openapi_security_definitions(
                 flat_dependant=flat_dependant
             )
@@ -247,7 +260,7 @@ def get_openapi_path(
                 operation.setdefault("security", []).extend(operation_security)
             if security_definitions:
                 security_schemes.update(security_definitions)
-            all_route_params = get_flat_params(route.dependant)
+            all_route_params = get_flat_params(dependant)
             operation_parameters = get_openapi_operation_parameters(
                 all_route_params=all_route_params,
                 schema_generator=schema_generator,
