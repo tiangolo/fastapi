@@ -16,14 +16,14 @@ openapi_schema = {
                 "parameters": [
                     {
                         "required": False,
-                        "schema": {"title": "Skip", "type": "integer", "default": 0},
-                        "name": "skip",
+                        "schema": {"title": "Limit", "type": "integer", "default": 100},
+                        "name": "limit",
                         "in": "query",
                     },
                     {
                         "required": False,
-                        "schema": {"title": "Limit", "type": "integer", "default": 100},
-                        "name": "limit",
+                        "schema": {"title": "Skip", "type": "integer", "default": 0},
+                        "name": "skip",
                         "in": "query",
                     },
                 ],
@@ -168,14 +168,14 @@ openapi_schema = {
                 "parameters": [
                     {
                         "required": False,
-                        "schema": {"title": "Skip", "type": "integer", "default": 0},
-                        "name": "skip",
+                        "schema": {"title": "Limit", "type": "integer", "default": 100},
+                        "name": "limit",
                         "in": "query",
                     },
                     {
                         "required": False,
-                        "schema": {"title": "Limit", "type": "integer", "default": 100},
-                        "name": "limit",
+                        "schema": {"title": "Skip", "type": "integer", "default": 0},
+                        "name": "skip",
                         "in": "query",
                     },
                 ],
@@ -212,14 +212,14 @@ openapi_schema = {
                 "parameters": [
                     {
                         "required": False,
-                        "schema": {"title": "Skip", "type": "integer", "default": 0},
-                        "name": "skip",
+                        "schema": {"title": "Limit", "type": "integer", "default": 100},
+                        "name": "limit",
                         "in": "query",
                     },
                     {
                         "required": False,
-                        "schema": {"title": "Limit", "type": "integer", "default": 100},
-                        "name": "limit",
+                        "schema": {"title": "Skip", "type": "integer", "default": 0},
+                        "name": "skip",
                         "in": "query",
                     },
                 ],
