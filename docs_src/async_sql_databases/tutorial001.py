@@ -2,7 +2,7 @@ from typing import List
 
 import databases
 import sqlalchemy
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 # SQLAlchemy specific code, as with any other app
@@ -33,10 +33,8 @@ class NoteIn(BaseModel):
     completed: bool
 
 
-class Note(BaseModel):
+class Note(NoteIn):
     id: int
-    text: str
-    completed: bool
 
 
 app = FastAPI()
@@ -58,8 +56,37 @@ async def read_notes():
     return await database.fetch_all(query)
 
 
+@app.get("/notes/{note_id}/", response_model=Note)
+async def read_one_note(note_id: int):
+    query = notes.select().where(notes.c.id == note_id)
+    note = await database.fetch_one(query)
+    if note is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return note
+
+
 @app.post("/notes/", response_model=Note)
 async def create_note(note: NoteIn):
-    query = notes.insert().values(text=note.text, completed=note.completed)
+    query = notes.insert().values(**note.dict())
     last_record_id = await database.execute(query)
     return {**note.dict(), "id": last_record_id}
+
+
+@app.put("/notes/{note_id}/")
+async def update_note(note_id: int, note: NoteIn):
+    query = notes.select().where(notes.c.id == note_id)
+    note_fetched = await database.fetch_one(query)
+    if note_fetched is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+    query = notes.update().values(**note.dict()).where(notes.c.id == note_id)
+    await database.execute(query)
+
+
+@app.delete("/notes/{note_id}/")
+async def delete_note(note_id: int):
+    query = notes.select().where(notes.c.id == note_id)
+    note = await database.fetch_one(query)
+    if note is None:
+        raise HTTPException(status_code=404, detail="Note not found")
+    query = notes.delete().where(notes.c.id == note_id)
+    await database.execute(query)

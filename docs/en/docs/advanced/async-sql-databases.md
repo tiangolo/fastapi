@@ -8,7 +8,7 @@ It is compatible with:
 * MySQL
 * SQLite
 
-In this example, we'll use **SQLite**, because it uses a single file and Python has integrated support. So, you can copy this example and run it as is.
+In this example, we'll use **SQLite**, because it uses a single file and Python has integrated support. So, you can copy this example and run it as is. Though it is possible to use raw SQL statements with <a href="https://github.com/encode/databases" class="external-link" target="_blank">`encode/databases`</a>, it also supports using the <a class="external-link" target="_blank" href="https://docs.sqlalchemy.org/en/latest/core/">SQLAlchemy Core</a> Expression Language which is what we are going to use.
 
 Later, for your production application, you might want to use a database server like **PostgreSQL**.
 
@@ -99,11 +99,26 @@ It uses `typing.List`.
 
 That documents (and validates, serializes, filters) the output data, as a `list` of `Note`s.
 
+## Read one note
+
+Create the *path operation function* to read one note.
+```Python hl_lines="61-64"
+{!../../../docs_src/async_sql_databases/tutorial001.py!}
+```
+
+### About `notes.c.id == note_id`
+
+`notes.c` refers to the columns of  `notes` table and `id` refers to the `id` column of the `notes` table.
+By using operator overloading on the `notes.c.id` object, `notes.c.id == note_id` actually creates a `<sqlalchemy.sql.elements.BinaryExpression object at 0x...>` to store that expression and passes it into the `where()` function. SQLAlchemy then is able to translate that into a SQL query.
+
+!!! Note
+    Similar things happen when other operators are used like `>`, `<`, etc. for more info please read <a href="https://docs.sqlalchemy.org/en/14/core/tutorial.html#selecting-specific-columns" class="external-link" target="_blank">SQLAlchemy's explanation of it</a>
+
 ## Create notes
 
 Create the *path operation function* to create notes:
 
-```Python hl_lines="61-65"
+```Python hl_lines="61-64"
 {!../../../docs_src/async_sql_databases/tutorial001.py!}
 ```
 
@@ -149,6 +164,22 @@ So, the final result returned would be something like:
 }
 ```
 
+## Update notes
+
+Create the *path operation function* to update notes:
+
+```Python hl_lines="74-83"
+{!../../../docs_src/async_sql_databases/tutorial001.py!}
+```
+
+## Delete notes
+
+Create the *path operation function* to delete notes:
+
+```Python hl_lines="86-92"
+{!../../../docs_src/async_sql_databases/tutorial001.py!}
+```
+
 ## Check it
 
 You can copy this code as is, and see the docs at <a href="http://127.0.0.1:8000/docs" class="external-link" target="_blank">http://127.0.0.1:8000/docs</a>.
@@ -159,4 +190,4 @@ There you can see all your API documented and interact with it:
 
 ## More info
 
-You can read more about <a href="https://github.com/encode/databases" class="external-link" target="_blank">`encode/databases` at its GitHub page</a>.
+You can read more about <a href="https://github.com/encode/databases" class="external-link" target="_blank">`encode/databases` at its GitHub page</a> and <a href="https://docs.sqlalchemy.org/en/latest/core/" class="external-link" target="blank_">SQLAlchemy Core at its website</a> as well.
