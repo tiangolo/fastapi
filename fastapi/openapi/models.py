@@ -1,3 +1,4 @@
+from decimal import Decimal
 from enum import Enum
 from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
@@ -103,11 +104,11 @@ class ExternalDocumentation(BaseModel):
 class Schema(BaseModel):
     ref: Optional[str] = Field(default=None, alias="$ref")
     title: Optional[str] = None
-    multipleOf: Optional[float] = None
-    maximum: Optional[float] = None
-    exclusiveMaximum: Optional[float] = None
-    minimum: Optional[float] = None
-    exclusiveMinimum: Optional[float] = None
+    multipleOf: Optional[Decimal] = None
+    maximum: Optional[Decimal] = None
+    exclusiveMaximum: Optional[Decimal] = None
+    minimum: Optional[Decimal] = None
+    exclusiveMinimum: Optional[Decimal] = None
     maxLength: Optional[int] = Field(default=None, gte=0)
     minLength: Optional[int] = Field(default=None, gte=0)
     pattern: Optional[str] = None
