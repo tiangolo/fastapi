@@ -73,6 +73,8 @@ nav:
   - tutorial/query-params.md
 - Guía de Usuario Avanzada:
   - advanced/index.md
+  - advanced/events.md
+
 - async.md
 markdown_extensions:
 - toc:
