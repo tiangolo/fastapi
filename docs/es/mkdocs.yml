@@ -72,7 +72,8 @@ nav:
   - tutorial/path-params.md
   - tutorial/query-params.md
 - Guía de Usuario Avanzada:
-  - advanced/index.md
+  - advanced/index.md 
+  - advanced/websockets.md
 - async.md
 markdown_extensions:
 - toc:
