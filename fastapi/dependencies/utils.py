@@ -26,6 +26,7 @@ from fastapi.concurrency import (
     contextmanager_in_threadpool,
 )
 from fastapi.dependencies.models import Dependant, SecurityRequirement
+from fastapi.dependencies.protocols import GenericTypeProtocol
 from fastapi.logger import logger
 from fastapi.security.base import SecurityBase
 from fastapi.security.oauth2 import OAuth2, SecurityScopes
@@ -246,7 +247,32 @@ def is_scalar_sequence_field(field: ModelField) -> bool:
     return False
 
 
+def is_generic_type(obj: Any) -> bool:
+    return hasattr(obj, "__origin__") and hasattr(obj, "__args__")
+
+
+def substitute_generic_type(annotation: Any, typevars: Dict[str, Any]) -> Any:
+    collection_shells = {list: List, set: List, dict: Dict, tuple: Tuple}
+    if is_generic_type(annotation):
+        args = tuple(
+            substitute_generic_type(arg, typevars) for arg in annotation.__args__
+        )
+        annotation = collection_shells.get(annotation.__origin__, annotation)
+        return annotation[args]
+    return typevars.get(annotation.__name__, annotation)
+
+
 def get_typed_signature(call: Callable[..., Any]) -> inspect.Signature:
+    typevars = None
+    if is_generic_type(call):
+        generic: GenericTypeProtocol = cast(GenericTypeProtocol, call)
+        origin: Any = generic.__origin__
+        typevars = {
+            typevar.__name__: value
+            for typevar, value in zip(origin.__parameters__, generic.__args__)
+        }
+        call = origin.__init__
+
     signature = inspect.signature(call)
     globalns = getattr(call, "__globals__", {})
     typed_params = [
@@ -254,18 +280,25 @@ def get_typed_signature(call: Callable[..., Any]) -> inspect.Signature:
             name=param.name,
             kind=param.kind,
             default=param.default,
-            annotation=get_typed_annotation(param.annotation, globalns),
+            annotation=get_typed_annotation(param.annotation, globalns, typevars),
         )
         for param in signature.parameters.values()
+        if param.name != "self"
     ]
     typed_signature = inspect.Signature(typed_params)
     return typed_signature
 
 
-def get_typed_annotation(annotation: Any, globalns: Dict[str, Any]) -> Any:
+def get_typed_annotation(
+    annotation: Any,
+    globalns: Dict[str, Any],
+    typevars: Optional[Dict[str, type]] = None,
+) -> Any:
     if isinstance(annotation, str):
         annotation = ForwardRef(annotation)
         annotation = evaluate_forwardref(annotation, globalns, globalns)
+    if typevars:
+        annotation = substitute_generic_type(annotation, typevars)
     return annotation
 
 
