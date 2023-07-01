@@ -28,8 +28,7 @@ from fastapi.concurrency import (
 from fastapi.dependencies.models import Dependant, SecurityRequirement
 from fastapi.logger import logger
 from fastapi.security.base import SecurityBase
-from fastapi.security.oauth2 import OAuth2, SecurityScopes
-from fastapi.security.open_id_connect_url import OpenIdConnect
+from fastapi.security.oauth2 import SecurityScopes
 from fastapi.utils import create_response_field, get_path_param_names
 from pydantic import BaseModel, create_model
 from pydantic.error_wrappers import ErrorWrapper
@@ -150,11 +149,8 @@ def get_sub_dependant(
         dependency_scopes = depends.scopes
         security_scopes.extend(dependency_scopes)
     if isinstance(dependency, SecurityBase):
-        use_scopes: List[str] = []
-        if isinstance(dependency, (OAuth2, OpenIdConnect)):
-            use_scopes = security_scopes
         security_requirement = SecurityRequirement(
-            security_scheme=dependency, scopes=use_scopes
+            security_scheme=dependency, scopes=security_scopes
         )
     sub_dependant = get_dependant(
         path=path,
