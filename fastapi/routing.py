@@ -543,6 +543,7 @@ class APIRouter(routing.Router):
         generate_unique_id_function: Callable[[APIRoute], str] = Default(
             generate_unique_id
         ),
+        websocket_route_class: Type[APIWebSocketRoute] = APIWebSocketRoute,
     ) -> None:
         super().__init__(
             routes=routes,
@@ -568,6 +569,7 @@ class APIRouter(routing.Router):
         self.route_class = route_class
         self.default_response_class = default_response_class
         self.generate_unique_id_function = generate_unique_id_function
+        self.websocket_route_class = websocket_route_class
 
     def route(
         self,
@@ -744,7 +746,7 @@ class APIRouter(routing.Router):
         if dependencies:
             current_dependencies.extend(dependencies)
 
-        route = APIWebSocketRoute(
+        route = self.websocket_route_class(
             self.prefix + path,
             endpoint=endpoint,
             name=name,
