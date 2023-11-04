@@ -946,6 +946,7 @@ class FastAPI(Starlette):
             include_in_schema=include_in_schema,
             responses=responses,
             generate_unique_id_function=generate_unique_id_function,
+            deferred_init=False,
         )
         self.exception_handlers: Dict[
             Any, Callable[[Request, Any], Union[Response, Awaitable[Response]]]
