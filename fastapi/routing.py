@@ -1071,11 +1071,6 @@ class APIRouter(routing.Router):
 
         return decorator
 
-    def undefer_route_attributes(self) -> None:
-        for route in self.routes:
-            if isinstance(route, APIRoute):
-                route.undefer_attributes()
-
     def include_router(
         self,
         router: Annotated["APIRouter", Doc("The `APIRouter` to include.")],
