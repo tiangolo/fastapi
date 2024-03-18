@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Type, Union
 
 import pytest
 from dirty_equals import IsDict
@@ -131,6 +131,21 @@ def body_customparsed(b: CustomParsed = Body()):
     return {"b": b.parse()}
 
 
+@app.post("/body_default/basic")
+def body_default_basic(b: Basic):
+    return {"b": b}
+
+
+@app.post("/body_default/fieldwrap")
+def body_default_fieldwrap(b: FieldWrap):
+    return {"b": b}
+
+
+@app.post("/body_default/customparsed")
+def body_default_customparsed(b: CustomParsed):
+    return {"b": b.parse()}
+
+
 @app.get("/echo/basic")
 def echo_basic(q: Basic = Query()) -> Basic:
     return q
@@ -166,6 +181,9 @@ client = TestClient(app)
         ("/body/basic", {"b": 42}, "42"),
         ("/body/fieldwrap", {"b": "bar_baz"}, "bar_baz"),
         ("/body/customparsed", {"b": "bar"}, "foo_bar"),
+        ("/body_default/basic", {"b": 42}, "42"),
+        ("/body_default/fieldwrap", {"b": "bar_baz"}, "bar_baz"),
+        ("/body_default/customparsed", {"b": "bar"}, "foo_bar"),
         ("/echo/basic?q=42", 42, None),
         ("/echo/fieldwrap?q=bar_baz", "bar_baz", None),
         ("/echo/customparsed?q=foo_bar", "foo_bar_serialized", None),
@@ -178,12 +196,53 @@ def test_root_model_200(url: str, response_json: Any, request_body: Any):
     assert response.json() == response_json
 
 
+def test_root_model_union():
+    if PYDANTIC_V2:
+        from pydantic import RootModel
+
+        RootModelInt = RootModel[int]
+        RootModelStr = RootModel[str]
+    else:
+
+        class RootModelInt(BaseModel):
+            __root__: int
+
+        class RootModelStr(BaseModel):
+            __root__: str
+
+    app2 = FastAPI()
+
+    @app2.post("/union")
+    def union_handler(b: Union[RootModelInt, RootModelStr]):
+        return {"b": b}
+
+    client2 = TestClient(app2)
+    for body in [42, "foo"]:
+        response = client2.post("/union", json=body)
+        assert response.status_code == 200, response.text
+        assert response.json() == {"b": body}
+
+    response = client2.post("/union", json=["bad_list"])
+    assert response.status_code == 422, response.text
+    if PYDANTIC_V2:
+        assert {detail["msg"] for detail in response.json()["detail"]} == {
+            "Input should be a valid integer",
+            "Input should be a valid string",
+        }
+    else:
+        assert {detail["msg"] for detail in response.json()["detail"]} == {
+            "value is not a valid integer",
+            "str type expected",
+        }
+
+
 @pytest.mark.parametrize(
     "url, error_path, request_body",
     [
         ("/query/basic?q=my_bad_not_int", ["query", "q"], None),
         ("/path/basic/my_bad_not_int", ["path", "p"], None),
         ("/body/basic", ["body"], "my_bad_not_int"),
+        ("/body_default/basic", ["body"], "my_bad_not_int"),
     ],
 )
 def test_root_model_basic_422(url: str, error_path: List[str], request_body: Any):
@@ -221,6 +280,7 @@ def test_root_model_basic_422(url: str, error_path: List[str], request_body: Any
         ("/query/fieldwrap?q=my_bad_prefix_val", ["query", "q"], None),
         ("/path/fieldwrap/my_bad_prefix_val", ["path", "p"], None),
         ("/body/fieldwrap", ["body"], "my_bad_prefix_val"),
+        ("/body_default/fieldwrap", ["body"], "my_bad_prefix_val"),
     ],
 )
 def test_root_model_fieldwrap_422(url: str, error_path: List[str], request_body: Any):
@@ -260,6 +320,7 @@ def test_root_model_fieldwrap_422(url: str, error_path: List[str], request_body:
         ("/query/customparsed?q=my_bad_prefix_val", ["query", "q"], None),
         ("/path/customparsed/my_bad_prefix_val", ["path", "p"], None),
         ("/body/customparsed", ["body"], "my_bad_prefix_val"),
+        ("/body_default/customparsed", ["body"], "my_bad_prefix_val"),
     ],
 )
 def test_root_model_customparsed_422(
@@ -359,6 +420,10 @@ def test_openapi_schema(model: Type, model_schema: Dict[str, Any]):
         {"in": "path", "name": "p", "required": True, **ref}
     ]
     assert paths[f"/body/{model.__name__.lower()}"]["post"]["requestBody"] == {
+        "content": {"application/json": ref},
+        "required": True,
+    }
+    assert paths[f"/body_default/{model.__name__.lower()}"]["post"]["requestBody"] == {
         "content": {"application/json": ref},
         "required": True,
     }

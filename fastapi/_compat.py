@@ -230,11 +230,7 @@ if PYDANTIC_V2:
         return field_mapping, definitions  # type: ignore[return-value]
 
     def is_scalar_field(field: ModelField) -> bool:
-        from fastapi import params
-
-        return field_annotation_is_scalar(
-            field.field_info.annotation
-        ) and not isinstance(field.field_info, params.Body)
+        return field_annotation_is_scalar(field.field_info.annotation)
 
     def is_sequence_field(field: ModelField) -> bool:
         return field_annotation_is_sequence(field.field_info.annotation)
@@ -489,11 +485,7 @@ else:
         )
 
     def is_scalar_field(field: ModelField) -> bool:
-        from fastapi import params
-
-        return is_pv1_scalar_field(field) and not isinstance(
-            field.field_info, params.Body
-        )
+        return is_pv1_scalar_field(field)
 
     def is_sequence_field(field: ModelField) -> bool:
         return field.shape in sequence_shapes or _annotation_is_sequence(field.type_)  # type: ignore[attr-defined]
@@ -568,6 +560,14 @@ def _annotation_is_complex(annotation: Union[Type[Any], None]) -> bool:
         or _annotation_is_sequence(annotation)
         or is_dataclass(annotation)
     )
+
+
+def field_annotation_is_root_model(annotation: Union[Type[Any], None]) -> bool:
+    origin = get_origin(annotation)
+    if origin is Union or origin is UnionType:
+        return any(field_annotation_is_root_model(arg) for arg in get_args(annotation))
+
+    return root_model_inner_type(annotation) is not None
 
 
 def field_annotation_is_complex(annotation: Union[Type[Any], None]) -> bool:
