@@ -542,7 +542,8 @@ async def solve_dependencies(
         response = Response()
         del response.headers["content-length"]
         response.status_code = None  # type: ignore
-    dependency_cache = dependency_cache or {}
+    if dependency_cache is None:
+        dependency_cache = {}
     sub_dependant: Dependant
     for sub_dependant in dependant.dependencies:
         sub_dependant.call = cast(Callable[..., Any], sub_dependant.call)
@@ -588,10 +589,8 @@ async def solve_dependencies(
             sub_values,
             sub_errors,
             background_tasks,
-            _,  # the subdependency returns the same response we have
-            sub_dependency_cache,
+            *_,  # the subdependency returns the same response and cache we already have
         ) = solved_result
-        dependency_cache.update(sub_dependency_cache)
         if sub_errors:
             errors.extend(sub_errors)
             continue
