@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi import Depends, FastAPI, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from . import crud, models, schemas
@@ -13,7 +13,6 @@ app = FastAPI()
 
 @app.middleware("http")
 async def db_session_middleware(request: Request, call_next):
-    response = Response("Internal server error", status_code=500)
     try:
         request.state.db = SessionLocal()
         response = await call_next(request)
