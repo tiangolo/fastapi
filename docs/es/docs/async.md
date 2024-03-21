@@ -6,13 +6,13 @@ Detalles sobre la sintaxis `async def` para *path operation functions* y un poco
 
 <abbr title="too long; didn't read"><strong>TL;DR:</strong></abbr>
 
-Si estás utilizando libraries de terceros que te dicen que las llames con `await`, del tipo:
+Si estás utilizando librerías de terceros que te dicen que las llames con `await`, del tipo:
 
 ```Python
 results = await some_library()
 ```
 
-Entonces declara tus *path operation functions* con `async def` de la siguiente manera:
+Entonces declara tus *<abbr title="funciones de operación de ruta">path operation functions</abbr>* con `async def` de la siguiente manera:
 
 ```Python hl_lines="2"
 @app.get('/')
@@ -26,7 +26,7 @@ async def read_results():
 
 ---
 
-Si estás utilizando libraries de terceros que se comunican con algo (una base de datos, una API, el sistema de archivos, etc.) y no tienes soporte para `await` (este es el caso para la mayoría de las libraries de bases de datos), declara tus *path operation functions* de forma habitual, con solo `def`, de la siguiente manera:
+Si estás utilizando librerías de terceros que se comunican con algo (una base de datos, una API, el sistema de archivos, etc.) y no tienes soporte para `await` (este es el caso para la mayoría de las librerías de bases de datos), declara tus *path operation functions* de forma habitual, con solo `def`, de la siguiente manera:
 
 ```Python hl_lines="2"
 @app.get('/')
@@ -45,7 +45,7 @@ Si simplemente no lo sabes, usa `def` normal.
 
 ---
 
-**Nota**: puedes mezclar `def` y `async def` en tus *path operation functions* tanto como lo necesites y definir cada una utilizando la mejor opción para ti. FastAPI hará lo correcto con ellos.
+**Nota**: Puedes mezclar `def` y `async def` en tus *<abbr title="funciones de operación de ruta">path operation functions</abbr>* tanto como lo necesites y definir cada una utilizando la mejor opción para ti. FastAPI hará lo correcto con ellos.
 
 De todos modos, en cualquiera de los casos anteriores, FastAPI seguirá funcionando de forma asíncrona y será extremadamente rápido.
 
@@ -53,13 +53,13 @@ Pero siguiendo los pasos anteriores, FastAPI podrá hacer algunas optimizaciones
 
 ## Detalles Técnicos
 
-Las versiones modernas de Python tienen soporte para **"código asíncrono"** usando algo llamado **"coroutines"**, usando la sintaxis **`async` y `await`**.
+Las versiones modernas de Python tienen soporte para **"código asíncrono"** usando algo llamado **<abbr title="En español: corrutinas">"coroutines"</abbr>**, usando la sintaxis **`async` y `await`**.
 
 Veamos esa frase por partes en las secciones siguientes:
 
 * **Código Asíncrono**
 * **`async` y `await`**
-* **Coroutines**
+* **<abbr title="En español: corrutinas">Coroutines</abbr>**
 
 ## Código Asíncrono
 
@@ -104,26 +104,27 @@ Para entender las diferencias, imagina la siguiente historia sobre hamburguesas:
 
 Vas con la persona que te gusta 😍 a pedir comida rápida 🍔, haces cola mientras el cajero 💁 recoge los pedidos de las personas de delante tuyo.
 
-<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-01.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-01.png" class="illustration">
 
 Llega tu turno, haces tu pedido de 2 hamburguesas impresionantes para esa persona 😍 y para ti.
 
-<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-02.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-02.png" class="illustration">
 
 El cajero 💁 le dice algo al chico de la cocina 👨‍🍳 para que sepa que tiene que preparar tus hamburguesas 🍔 (a pesar de que actualmente está preparando las de los clientes anteriores).
 
-<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-03.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-03.png" class="illustration">
 
 Pagas 💸.
+
 El cajero 💁 te da el número de tu turno.
 
-<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-04.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-04.png" class="illustration">
 
 Mientras esperas, vas con esa persona 😍 y eliges una mesa, se sientan y hablan durante un rato largo (ya que las hamburguesas son muy impresionantes y necesitan un rato para prepararse ✨🍔✨).
 
 Mientras te sientas en la mesa con esa persona 😍, esperando las hamburguesas 🍔, puedes disfrutar ese tiempo admirando lo increíble, inteligente, y bien que se ve ✨😍✨.
 
-<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-05.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-05.png" class="illustration">
 
 Mientras esperas y hablas con esa persona 😍, de vez en cuando, verificas el número del mostrador para ver si ya es tu turno.
 
@@ -133,9 +134,9 @@ Al final, en algún momento, llega tu turno. Vas al mostrador, coges tus hamburg
 
 Tú y esa persona 😍 se comen las hamburguesas 🍔 y la pasan genial ✨.
 
-<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-07.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/concurrent-burgers/concurrent-burgers-07.png" class="illustration">
 
-!!! info
+!!! info "Información"
      Las ilustraciones fueron creados por <a href="https://www.instagram.com/ketrinadrawsalot" class="external-link" target="_blank">Ketrina Thompson</a>. 🎨
 
 ---
@@ -166,39 +167,39 @@ Haces la cola mientras varios cajeros (digamos 8) que a la vez son cocineros �
 
 Todos los que están antes de ti están esperando 🕙 que sus hamburguesas 🍔 estén listas antes de dejar el mostrador porque cada uno de los 8 cajeros prepara la hamburguesa de inmediato antes de recibir el siguiente pedido.
 
-<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-01.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-01.png" class="illustration">
 
 Entonces finalmente es tu turno, haces tu pedido de 2 hamburguesas 🍔 impresionantes para esa persona 😍 y para ti.
 
 Pagas 💸.
 
-<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-02.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-02.png" class="illustration">
 
 El cajero va a la cocina 👨‍🍳.
 
 Esperas, de pie frente al mostrador 🕙, para que nadie más recoja tus hamburguesas 🍔, ya que no hay números para los turnos.
 
-<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-03.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-03.png" class="illustration">
 
 Como tu y esa persona 😍 están ocupados en impedir que alguien se ponga delante y recoja tus hamburguesas apenas llegan 🕙, tampoco puedes prestarle atención a esa persona 😞.
 
 Este es un trabajo "síncrono", estás "sincronizado" con el cajero / cocinero 👨‍🍳. Tienes que esperar y estar allí en el momento exacto en que el cajero / cocinero 👨‍🍳 termina las hamburguesas 🍔 y te las da, o de lo contrario, alguien más podría cogerlas.
 
-<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-04.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-04.png" class="illustration">
 
 Luego, el cajero / cocinero 👨‍🍳 finalmente regresa con tus hamburguesas 🍔, después de mucho tiempo esperando 🕙 frente al mostrador.
 
-<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-05.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-05.png" class="illustration">
 
 Cojes tus hamburguesas 🍔 y vas a la mesa con esa persona 😍.
 
 Sólo las comes y listo 🍔 ⏹.
 
-<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-06.png" alt="illustration">
+<img src="https://fastapi.tiangolo.com/img/async/parallel-burgers/parallel-burgers-06.png" class="illustration">
 
 No has hablado ni coqueteado mucho, ya que has pasado la mayor parte del tiempo esperando 🕙 frente al mostrador 😞.
 
-!!! info
+!!! info "Información"
      Las ilustraciones fueron creados por <a href="https://www.instagram.com/ketrinadrawsalot" class="external-link" target="_blank">Ketrina Thompson</a>. 🎨
 
 ---
@@ -237,10 +238,6 @@ Esta "espera" 🕙 se mide en microsegundos, pero aun así, sumando todo, al fin
 
 Es por eso que tiene mucho sentido usar código asíncrono ⏸🔀⏯ para las API web.
 
-La mayoría de los framework populares de Python existentes (incluidos Flask y Django) se crearon antes de que existieran las nuevas funciones asíncronas en Python. Por lo tanto, las formas en que pueden implementarse admiten la ejecución paralela y una forma más antigua de ejecución asíncrona que no es tan potente como la actual.
-
-A pesar de que la especificación principal para Python web asíncrono (ASGI) se desarrolló en Django, para agregar soporte para WebSockets.
-
 Ese tipo de asincronía es lo que hizo popular a NodeJS (aunque NodeJS no es paralelo) y esa es la fortaleza de Go como lenguaje de programación.
 
 Y ese es el mismo nivel de rendimiento que obtienes con **FastAPI**.
@@ -267,7 +264,7 @@ Podrías tener turnos como en el ejemplo de las hamburguesas, primero la sala de
 
 Tomaría la misma cantidad de tiempo terminar con o sin turnos (concurrencia) y habrías hecho la misma cantidad de trabajo.
 
-Pero en este caso, si pudieras traer a los 8 ex cajeros / cocineros / ahora limpiadores 👨‍🍳👨‍🍳👨‍🍳👨‍🍳👨‍🍳👨‍🍳👨‍🍳👨‍🍳, y cada uno de ellos (y tú) podría tomar una zona de la casa para limpiarla, podría hacer todo el trabajo en **paralelo**, con la ayuda adicional y terminar mucho antes.
+Pero en este caso, si pudieras traer a los 8 ex cajeros / cocineros / ahora limpiadores 👨‍🍳👨‍🍳👨‍🍳👨‍🍳👨‍🍳👨‍🍳👨‍🍳👨‍🍳, y cada uno de ellos (y tú) podrían tomar una zona de la casa para limpiarla, podrías hacer todo el trabajo en **paralelo**, con la ayuda adicional y terminar mucho antes.
 
 En este escenario, cada uno de los limpiadores (incluido tú) sería un procesador, haciendo su parte del trabajo.
 
@@ -323,18 +320,18 @@ def get_sequential_burgers(number: int):
     return burgers
 ```
 
-Con `async def`, Python sabe que, dentro de esa función, debe tener en cuenta las expresiones `wait` y que puede "pausar" ⏸ la ejecución de esa función e ir a hacer otra cosa 🔀 antes de regresar.
+Con `async def`, Python sabe que, dentro de esa función, debe tener en cuenta las expresiones `await` y que puede "pausar" ⏸ la ejecución de esa función e ir a hacer otra cosa 🔀 antes de regresar.
 
 Cuando desees llamar a una función `async def`, debes "esperarla". Entonces, esto no funcionará:
 
 ```Python
 # Esto no funcionará, porque get_burgers se definió con: async def
-hamburguesas = get_burgers (2)
+burgers = get_burgers(2)
 ```
 
 ---
 
-Por lo tanto, si estás utilizando una library que te dice que puedes llamarla con `await`, debes crear las *path operation functions* que la usan con `async def`, como en:
+Por lo tanto, si estás utilizando una librería que te dice que puedes llamarla con `await`, debes crear las *path operation functions* que la usan con `async def`, como en:
 
 ```Python hl_lines="2-3"
 @app.get('/burgers')
@@ -353,7 +350,15 @@ Entonces, relacionado con la paradoja del huevo y la gallina, ¿cómo se llama a
 
 Si estás trabajando con **FastAPI** no tienes que preocuparte por eso, porque esa "primera" función será tu *path operation function*, y FastAPI sabrá cómo hacer lo pertinente.
 
-En el caso de que desees usar `async` / `await` sin FastAPI, <a href="https://docs.python.org/3/library/asyncio-task.html#coroutine" class="external-link" target="_blank">revisa la documentación oficial de Python</a>.
+En el caso de que desees usar `async` / `await` sin FastAPI, también puedes hacerlo.
+
+### Escribe tu propio código asíncrono
+
+Starlette (y **FastAPI**) están basados en <a href="https://anyio.readthedocs.io/en/stable/" class="external-link" target="_blank">AnyIO</a>, lo que lo hace compatible con ambas bibliotecas estándar de Python:  <a href="https://docs.python.org/3/library/asyncio-task.html" class="external-link" target="_blank">asyncio</a> y <a href="https://trio.readthedocs.io/en/stable/" class="external-link" target="_blank">Trio</a>.
+
+En particular, puedes directamente usar <a href="https://anyio.readthedocs.io/en/stable/" class="external-link" target="_blank">AnyIO</a> para sus avanzada casos de uso de concurrencia que requieren patrones más avanzados en su propio código.
+
+E incluso si no estuviera usando FastAPI, también podría escribir sus propias aplicaciones asíncronas con <a href="https://anyio.readthedocs.io/en/stable/" class="external-link" target="_blank" >AnyIO</a> siendo altamente compatible y obteniendo sus beneficios (por ejemplo, *concurrencia estructurada*).
 
 ### Otras formas de código asíncrono
 
@@ -369,9 +374,9 @@ En versiones anteriores de Python, podrías haber utilizado <abbr title="En espa
 
 En versiones anteriores de NodeJS / Browser JavaScript, habrías utilizado "callbacks". Lo que conduce a <a href="http://callbackhell.com/" class="external-link" target="_blank">callback hell</a>.
 
-## Coroutines
+## <abbr title="En español: corrutinas">Coroutines</abbr>
 
-**Coroutine** es un término sofisticado para referirse a la cosa devuelta por una función `async def`. Python sabe que es algo así como una función que puede iniciar y que terminará en algún momento, pero que también podría pausarse ⏸ internamente, siempre que haya un `await` dentro de ella.
+**<abbr title="En español: corrutinas">Coroutines</abbr>** es un término sofisticado para referirse a la cosa devuelta por una función `async def`. Python sabe que es algo así como una función que puede iniciar y que terminará en algún momento, pero que también podría pausarse ⏸ internamente, siempre que haya un `await` dentro de ella.
 
 Pero toda esta funcionalidad de usar código asincrónico con `async` y `await` se resume muchas veces como usar "coroutines". Es comparable a la característica principal de Go, las "Goroutines".
 
@@ -400,15 +405,15 @@ Cuando declaras una *path operation function* con `def` normal en lugar de `asyn
 
 Si vienes de otro framework asíncrono que no funciona de la manera descrita anteriormente y estás acostumbrado a definir *path operation functions* del tipo sólo cálculo con `def` simple para una pequeña ganancia de rendimiento (aproximadamente 100 nanosegundos), ten en cuenta que en **FastAPI** el efecto sería bastante opuesto. En estos casos, es mejor usar `async def` a menos que tus *path operation functions* usen un código que realice el bloqueo <abbr title="Input/Output: disk reading or writing, network communications.">I/O</abbr>.
 
-Aún así, en ambas situaciones, es probable que **FastAPI** sea [aún más rápido](/#rendimiento){.Internal-link target=_blank} que (o al menos comparable) a tu framework anterior.
+Aún así, en ambas situaciones, es probable que **FastAPI** sea [aún más rápido](./index.md#rendimiento){.internal-link target=_blank} que (o al menos comparable) a tu framework anterior.
 
 ### Dependencias
 
-Lo mismo se aplica para las dependencias. Si una dependencia es una función estándar `def` en lugar de `async def`, se ejecuta en el threadpool externo.
+Lo mismo se aplica para las [dependencias](./tutorial/dependencies/index.md){.internal-link target=_blank}. Si una dependencia es una función estándar `def` en lugar de `async def`, se ejecuta en el threadpool externo.
 
 ### Subdependencias
 
-Puedes tener múltiples dependencias y subdependencias que se requieren unas a otras (como parámetros de las definiciones de cada función), algunas de ellas pueden crearse con `async def` y otras con `def` normal. Igual todo seguiría funcionando correctamente, y las creadas con `def` normal se llamarían en un thread externo (del threadpool) en lugar de ser "awaited".
+Puedes tener múltiples dependencias y [subdependencias](./tutorial/dependencies/sub-dependencies.md){.internal-link target=_blank} que se requieren unas a otras (como parámetros de las definiciones de cada función), algunas de ellas pueden crearse con `async def` y otras con `def` normal. Igual todo seguiría funcionando correctamente, y las creadas con `def` normal se llamarían en un thread externo (del threadpool) en lugar de ser "awaited".
 
 ### Otras funciones de utilidades
 
