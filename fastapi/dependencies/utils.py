@@ -342,9 +342,9 @@ def analyze_param(
             if isinstance(arg, (params.Param, params.Body, params.Depends))
         ]
         if fastapi_specific_annotations:
-            fastapi_annotation: Union[
-                FieldInfo, params.Depends, None
-            ] = fastapi_specific_annotations[-1]
+            fastapi_annotation: Union[FieldInfo, params.Depends, None] = (
+                fastapi_specific_annotations[-1]
+            )
         else:
             fastapi_annotation = None
         if isinstance(fastapi_annotation, FieldInfo):
@@ -743,7 +743,7 @@ async def request_body_to_args(
                 results: List[Union[bytes, str]] = []
 
                 async def process_fn(
-                    fn: Callable[[], Coroutine[Any, Any, Any]]
+                    fn: Callable[[], Coroutine[Any, Any, Any]],
                 ) -> None:
                     result = await fn()
                     results.append(result)  # noqa: B023
