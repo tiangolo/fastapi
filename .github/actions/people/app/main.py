@@ -378,7 +378,7 @@ def get_discussion_nodes(settings: Settings) -> List[DiscussionsNode]:
 
 
 def get_discussions_experts(
-    discussion_nodes: List[DiscussionsNode]
+    discussion_nodes: List[DiscussionsNode],
 ) -> DiscussionExpertsResults:
     commenters = Counter()
     last_month_commenters = Counter()
@@ -515,9 +515,9 @@ def get_individual_sponsors(settings: Settings):
 
     tiers: DefaultDict[float, Dict[str, SponsorEntity]] = defaultdict(dict)
     for node in nodes:
-        tiers[node.tier.monthlyPriceInDollars][
-            node.sponsorEntity.login
-        ] = node.sponsorEntity
+        tiers[node.tier.monthlyPriceInDollars][node.sponsorEntity.login] = (
+            node.sponsorEntity
+        )
     return tiers
 
 
