@@ -1,5 +1,5 @@
 import logging
-import random
+import secrets
 import sys
 import time
 from pathlib import Path
@@ -315,7 +315,9 @@ if __name__ == "__main__":
     github_event = PartialGitHubEvent.parse_raw(contents)
 
     # Avoid race conditions with multiple labels
-    sleep_time = random.random() * 10  # random number between 0 and 10 seconds
+    sleep_time = (
+        secrets.SystemRandom().random() * 10
+    )  # random number between 0 and 10 seconds
     logging.info(
         f"Sleeping for {sleep_time} seconds to avoid "
         "race conditions and multiple comments"
