@@ -7,6 +7,7 @@ There are 3 main alternatives:
 * <a href="https://www.uvicorn.org/" class="external-link" target="_blank">Uvicorn</a>: a high performance ASGI server.
 * <a href="https://pgjones.gitlab.io/hypercorn/" class="external-link" target="_blank">Hypercorn</a>: an ASGI server compatible with HTTP/2 and Trio among other features.
 * <a href="https://github.com/django/daphne" class="external-link" target="_blank">Daphne</a>: the ASGI server built for Django Channels.
+* <a href="https://github.com/emmett-framework/granian" class="external-link" target="_blank">Granian</a>: A Rust HTTP server for Python applications.
 
 ## Server Machine and Server Program
 
@@ -55,7 +56,21 @@ You can install an ASGI compatible server with:
 
     </div>
 
-    ...or any other ASGI server.
+=== "Granian"
+
+    * <a href="https://github.com/emmett-framework/granian" class="external-link" target="_blank">Granian</a>, a Rust ASGI server also compatible with HTTP/2.
+
+    <div class="termy">
+
+    ```console
+    $ pip install granian
+
+    ---> 100%
+    ```
+
+    </div>
+
+...or any other ASGI server.
 
 ## Run the Server Program
 
@@ -80,7 +95,19 @@ You can then run your application the same way you have done in the tutorials, b
     ```console
     $ hypercorn main:app --bind 0.0.0.0:80
 
-    Running on 0.0.0.0:8080 over http (CTRL + C to quit)
+    Running on 0.0.0.0:80 over http (CTRL + C to quit)
+    ```
+
+    </div>
+
+=== "Granian"
+
+    <div class="termy">
+
+    ```console
+    $ granian --interface asgi --host 0.0.0.0 --port 80 main:app
+
+    Running on 0.0.0.0:80 over http (CTRL + C to quit)
     ```
 
     </div>
@@ -96,7 +123,7 @@ You can then run your application the same way you have done in the tutorials, b
 
 Starlette and **FastAPI** are based on <a href="https://anyio.readthedocs.io/en/stable/" class="external-link" target="_blank">AnyIO</a>, which makes them compatible with both Python's standard library <a href="https://docs.python.org/3/library/asyncio-task.html" class="external-link" target="_blank">asyncio</a> and <a href="https://trio.readthedocs.io/en/stable/" class="external-link" target="_blank">Trio</a>.
 
-Nevertheless, Uvicorn is currently only compatible with asyncio, and it normally uses <a href="https://github.com/MagicStack/uvloop" class="external-link" target="_blank">`uvloop`</a>, the high-performance drop-in replacement for `asyncio`.
+Nevertheless, Uvicorn and Granian are currently only compatible with asyncio, and they normally use <a href="https://github.com/MagicStack/uvloop" class="external-link" target="_blank">`uvloop`</a>, the high-performance drop-in replacement for `asyncio`.
 
 But if you want to directly use **Trio**, then you can use **Hypercorn** as it supports it. ✨
 
