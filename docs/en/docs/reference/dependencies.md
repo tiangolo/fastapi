@@ -1,4 +1,4 @@
-# Dependencies - `Depends()` and `Security()`
+# Dependencies - `Depends()`, `Security()` and `Service()`
 
 ## `Depends()`
 
@@ -30,3 +30,18 @@ from fastapi import Security
 ```
 
 ::: fastapi.Security
+
+## `Service()`
+
+`Depends()` is designed to include matching fields of annotated class as body/query params.
+To avoid this, you can annotate class using `Service()` instead of `Depends()`.
+
+Here is the reference for it and its parameters.
+
+You can import it directly from `fastapi`:
+
+```python
+from fastapi import Service
+```
+
+::: fastapi.Service

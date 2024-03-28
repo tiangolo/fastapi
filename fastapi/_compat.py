@@ -44,8 +44,8 @@ sequence_annotation_to_type = {
 sequence_types = tuple(sequence_annotation_to_type.keys())
 
 if PYDANTIC_V2:
+    from pydantic import ConfigDict, TypeAdapter
     from pydantic import PydanticSchemaGenerationError as PydanticSchemaGenerationError
-    from pydantic import TypeAdapter
     from pydantic import ValidationError as ValidationError
     from pydantic._internal._schema_generation_shared import (  # type: ignore[attr-defined]
         GetJsonSchemaHandler as GetJsonSchemaHandler,
@@ -104,8 +104,12 @@ if PYDANTIC_V2:
             return self.field_info.annotation
 
         def __post_init__(self) -> None:
+            config = None
+            if self.mode == "validation":
+                config = ConfigDict(arbitrary_types_allowed=True)
             self._type_adapter: TypeAdapter[Any] = TypeAdapter(
-                Annotated[self.field_info.annotation, self.field_info]
+                Annotated[self.field_info.annotation, self.field_info],
+                config=config,
             )
 
         def get_default(self) -> Any:
