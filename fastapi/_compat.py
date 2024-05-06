@@ -17,12 +17,19 @@ from typing import (
     Union,
 )
 
-from fastapi.exceptions import RequestErrorModel
+from fastapi.exceptions import ErrorDetails, RequestErrorModel
 from fastapi.types import IncEx, ModelNameMap, UnionType
 from pydantic import BaseModel, create_model
 from pydantic.version import VERSION as P_VERSION
 from starlette.datastructures import UploadFile
-from typing_extensions import Annotated, Literal, get_args, get_origin
+from typing_extensions import (
+    Annotated,
+    Literal,
+    TypeAlias,
+    assert_never,
+    get_args,
+    get_origin,
+)
 
 # Reassign variable to make it reexported for mypy
 PYDANTIC_VERSION = P_VERSION
@@ -82,6 +89,9 @@ if PYDANTIC_V2:
     class ErrorWrapper(Exception):
         pass
 
+    # See https://github.com/pydantic/pydantic/blob/07b6473/pydantic/v1/error_wrappers.py#L45-L47
+    ErrorList: TypeAlias = Union[Sequence["ErrorList"], ErrorWrapper]
+
     @dataclass
     class ModelField:
         field_info: FieldInfo
@@ -115,22 +125,25 @@ if PYDANTIC_V2:
                 return Undefined
             return self.field_info.get_default(call_default_factory=True)
 
+        # See https://github.com/pydantic/pydantic/blob/07b6473/pydantic/v1/fields.py#L850-L852 for the signature.
         def validate(
             self,
             value: Any,
             values: Dict[str, Any] = {},  # noqa: B006
             *,
             loc: Tuple[Union[int, str], ...] = (),
-        ) -> Tuple[Any, Union[List[Dict[str, Any]], None]]:
+        ) -> Tuple[Any, Union[ErrorList, Sequence[ErrorDetails], None]]:
             try:
                 return (
                     self._type_adapter.validate_python(value, from_attributes=True),
                     None,
                 )
             except ValidationError as exc:
-                return None, _regenerate_error_with_loc(
-                    errors=exc.errors(include_url=False), loc_prefix=loc
-                )
+                errors: List[ErrorDetails] = [
+                    {**err, "loc": loc + err.get("loc", ())}  # type: ignore [typeddict-unknown-key]
+                    for err in exc.errors(include_url=False)
+                ]
+                return None, errors
 
         def serialize(
             self,
@@ -167,8 +180,16 @@ if PYDANTIC_V2:
     ) -> Any:
         return annotation
 
-    def _normalize_errors(errors: Sequence[Any]) -> List[Dict[str, Any]]:
-        return errors  # type: ignore[return-value]
+    def _normalize_errors(
+        errors: Union[ErrorList, Sequence[ErrorDetails]],
+    ) -> Sequence[ErrorDetails]:
+        assert isinstance(errors, Sequence), type(errors)
+        use_errors: List[ErrorDetails] = []
+        for error in errors:
+            assert not isinstance(error, ErrorWrapper)
+            assert not isinstance(error, Sequence)
+            use_errors.append(error)
+        return use_errors
 
     def _model_rebuild(model: Type[BaseModel]) -> None:
         model.model_rebuild()
@@ -265,12 +286,12 @@ if PYDANTIC_V2:
         assert issubclass(origin_type, sequence_types)  # type: ignore[arg-type]
         return sequence_annotation_to_type[origin_type](value)  # type: ignore[no-any-return]
 
-    def get_missing_field_error(loc: Tuple[str, ...]) -> Dict[str, Any]:
+    def get_missing_field_error(loc: Tuple[str, ...]) -> ErrorDetails:
         error = ValidationError.from_exception_data(
             "Field required", [{"type": "missing", "loc": loc, "input": {}}]
         ).errors(include_url=False)[0]
         error["input"] = None
-        return error  # type: ignore[return-value]
+        return error
 
     def create_body_model(
         *, fields: Sequence[ModelField], model_name: str
@@ -288,6 +309,9 @@ else:
     from pydantic import ValidationError as ValidationError
     from pydantic.class_validators import (  # type: ignore[no-redef]
         Validator as Validator,
+    )
+    from pydantic.error_wrappers import (  # type: ignore[no-redef]
+        ErrorList as ErrorList,
     )
     from pydantic.error_wrappers import (  # type: ignore[no-redef]
         ErrorWrapper as ErrorWrapper,
@@ -418,18 +442,23 @@ else:
             return True
         return False
 
-    def _normalize_errors(errors: Sequence[Any]) -> List[Dict[str, Any]]:
-        use_errors: List[Any] = []
-        for error in errors:
-            if isinstance(error, ErrorWrapper):
-                new_errors = ValidationError(  # type: ignore[call-arg]
-                    errors=[error], model=RequestErrorModel
+    def _normalize_errors(
+        errors: Union[ErrorList, Sequence[ErrorDetails]],
+    ) -> Sequence[ErrorDetails]:
+        use_errors: List[ErrorDetails] = []
+        if isinstance(errors, ErrorWrapper):
+            use_errors.extend(
+                ValidationError(  # type: ignore[call-arg]
+                    errors=[errors], model=RequestErrorModel
                 ).errors()
-                use_errors.extend(new_errors)
-            elif isinstance(error, list):
+            )
+        elif isinstance(errors, Sequence):
+            for error in errors:
+                assert not isinstance(error, dict)
                 use_errors.extend(_normalize_errors(error))
-            else:
-                use_errors.append(error)
+            return use_errors
+        else:
+            assert_never(errors)  # pragma: no cover
         return use_errors
 
     def _model_rebuild(model: Type[BaseModel]) -> None:
@@ -500,10 +529,10 @@ else:
     def serialize_sequence_value(*, field: ModelField, value: Any) -> Sequence[Any]:
         return sequence_shape_to_type[field.shape](value)  # type: ignore[no-any-return,attr-defined]
 
-    def get_missing_field_error(loc: Tuple[str, ...]) -> Dict[str, Any]:
+    def get_missing_field_error(loc: Tuple[str, ...]) -> ErrorDetails:
         missing_field_error = ErrorWrapper(MissingError(), loc=loc)  # type: ignore[call-arg]
         new_error = ValidationError([missing_field_error], RequestErrorModel)
-        return new_error.errors()[0]  # type: ignore[return-value]
+        return new_error.errors()[0]
 
     def create_body_model(
         *, fields: Sequence[ModelField], model_name: str
@@ -512,17 +541,6 @@ else:
         for f in fields:
             BodyModel.__fields__[f.name] = f  # type: ignore[index]
         return BodyModel
-
-
-def _regenerate_error_with_loc(
-    *, errors: Sequence[Any], loc_prefix: Tuple[Union[str, int], ...]
-) -> List[Dict[str, Any]]:
-    updated_loc_errors: List[Any] = [
-        {**err, "loc": loc_prefix + err.get("loc", ())}
-        for err in _normalize_errors(errors)
-    ]
-
-    return updated_loc_errors
 
 
 def _annotation_is_sequence(annotation: Union[Type[Any], None]) -> bool:

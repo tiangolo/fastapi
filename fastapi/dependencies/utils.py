@@ -21,11 +21,10 @@ import anyio
 from fastapi import params
 from fastapi._compat import (
     PYDANTIC_V2,
-    ErrorWrapper,
     ModelField,
     Required,
     Undefined,
-    _regenerate_error_with_loc,
+    _normalize_errors,
     copy_field_info,
     create_body_model,
     evaluate_forwardref,
@@ -50,6 +49,7 @@ from fastapi.concurrency import (
     contextmanager_in_threadpool,
 )
 from fastapi.dependencies.models import Dependant, SecurityRequirement
+from fastapi.exceptions import ErrorDetails
 from fastapi.logger import logger
 from fastapi.security.base import SecurityBase
 from fastapi.security.oauth2 import OAuth2, SecurityScopes
@@ -533,13 +533,13 @@ async def solve_dependencies(
     async_exit_stack: AsyncExitStack,
 ) -> Tuple[
     Dict[str, Any],
-    List[Any],
+    Sequence[ErrorDetails],
     Optional[StarletteBackgroundTasks],
     Response,
     Dict[Tuple[Callable[..., Any], Tuple[str]], Any],
 ]:
     values: Dict[str, Any] = {}
-    errors: List[Any] = []
+    errors: List[ErrorDetails] = []
     if response is None:
         response = Response()
         del response.headers["content-length"]
@@ -620,7 +620,8 @@ async def solve_dependencies(
     values.update(query_values)
     values.update(header_values)
     values.update(cookie_values)
-    errors += path_errors + query_errors + header_errors + cookie_errors
+    for errors_ in (path_errors, query_errors, header_errors, cookie_errors):
+        errors.extend(errors_)
     if dependant.body_params:
         (
             body_values,
@@ -652,9 +653,9 @@ async def solve_dependencies(
 def request_params_to_args(
     required_params: Sequence[ModelField],
     received_params: Union[Mapping[str, Any], QueryParams, Headers],
-) -> Tuple[Dict[str, Any], List[Any]]:
+) -> Tuple[Dict[str, Any], Sequence[ErrorDetails]]:
     values = {}
-    errors = []
+    errors: List[ErrorDetails] = []
     for field in required_params:
         if is_scalar_sequence_field(field) and isinstance(
             received_params, (QueryParams, Headers)
@@ -674,11 +675,8 @@ def request_params_to_args(
                 values[field.name] = deepcopy(field.default)
             continue
         v_, errors_ = field.validate(value, values, loc=loc)
-        if isinstance(errors_, ErrorWrapper):
-            errors.append(errors_)
-        elif isinstance(errors_, list):
-            new_errors = _regenerate_error_with_loc(errors=errors_, loc_prefix=())
-            errors.extend(new_errors)
+        if errors_ is not None:
+            errors.extend(_normalize_errors(errors_))
         else:
             values[field.name] = v_
     return values, errors
@@ -687,9 +685,9 @@ def request_params_to_args(
 async def request_body_to_args(
     required_params: List[ModelField],
     received_body: Optional[Union[Dict[str, Any], FormData]],
-) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+) -> Tuple[Dict[str, Any], Sequence[ErrorDetails]]:
     values = {}
-    errors: List[Dict[str, Any]] = []
+    errors: List[ErrorDetails] = []
     if required_params:
         field = required_params[0]
         field_info = field.field_info
@@ -756,11 +754,8 @@ async def request_body_to_args(
                 value = serialize_sequence_value(field=field, value=results)
 
             v_, errors_ = field.validate(value, values, loc=loc)
-
-            if isinstance(errors_, list):
-                errors.extend(errors_)
-            elif errors_:
-                errors.append(errors_)
+            if errors_ is not None:
+                errors.extend(_normalize_errors(errors_))
             else:
                 values[field.name] = v_
     return values, errors
