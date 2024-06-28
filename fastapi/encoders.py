@@ -11,6 +11,7 @@ from ipaddress import (
     IPv6Interface,
     IPv6Network,
 )
+from operator import attrgetter, methodcaller
 from pathlib import Path, PurePath
 from re import Pattern
 from types import GeneratorType
@@ -26,10 +27,9 @@ from typing_extensions import Annotated, Doc
 
 from ._compat import PYDANTIC_V2, UndefinedType, Url, _model_dump
 
-
-# Taken from Pydantic v1 as is
-def isoformat(o: Union[datetime.date, datetime.time]) -> str:
-    return o.isoformat()
+isoformat: Callable[[Union[datetime.date, datetime.time]], str] = methodcaller(
+    "isoformat"
+)
 
 
 # Taken from Pydantic v1 as is
@@ -56,14 +56,14 @@ def decimal_encoder(dec_value: Decimal) -> Union[int, float]:
 
 
 ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
-    bytes: lambda o: o.decode(),
+    bytes: methodcaller("decode"),
     Color: str,
     datetime.date: isoformat,
     datetime.datetime: isoformat,
     datetime.time: isoformat,
-    datetime.timedelta: lambda td: td.total_seconds(),
+    datetime.timedelta: methodcaller("total_seconds"),
     Decimal: decimal_encoder,
-    Enum: lambda o: o.value,
+    Enum: attrgetter("value"),
     frozenset: list,
     deque: list,
     GeneratorType: list,
@@ -75,7 +75,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
     IPv6Network: str,
     NameEmail: str,
     Path: str,
-    Pattern: lambda o: o.pattern,
+    Pattern: attrgetter("pattern"),
     SecretBytes: str,
     SecretStr: str,
     set: list,
@@ -201,24 +201,24 @@ def jsonable_encoder(
     Read more about it in the
     [FastAPI docs for JSON Compatible Encoder](https://fastapi.tiangolo.com/tutorial/encoder/).
     """
-    custom_encoder = custom_encoder or {}
-    if custom_encoder:
-        if type(obj) in custom_encoder:
-            return custom_encoder[type(obj)](obj)
-        else:
-            for encoder_type, encoder_instance in custom_encoder.items():
-                if isinstance(obj, encoder_type):
-                    return encoder_instance(obj)
+    custom_encoder = custom_encoder or None
+    if custom_encoder is not None:
+        encoder_instance = custom_encoder.get(type(obj))
+        if encoder_instance is not None:
+            return encoder_instance(obj)
+        for encoder_type, encoder_instance in custom_encoder.items():
+            if isinstance(obj, encoder_type):
+                return encoder_instance(obj)
     if include is not None and not isinstance(include, (set, dict)):
         include = set(include)
     if exclude is not None and not isinstance(exclude, (set, dict)):
         exclude = set(exclude)
     if isinstance(obj, BaseModel):
         # TODO: remove when deprecating Pydantic v1
-        encoders: Dict[Any, Any] = {}
+        encoders = None
         if not PYDANTIC_V2:
             encoders = getattr(obj.__config__, "json_encoders", {})  # type: ignore[attr-defined]
-            if custom_encoder:
+            if custom_encoder is not None:
                 encoders.update(custom_encoder)
         obj_dict = _model_dump(
             obj,
@@ -262,13 +262,23 @@ def jsonable_encoder(
     if isinstance(obj, UndefinedType):
         return None
     if isinstance(obj, dict):
-        encoded_dict = {}
-        allowed_keys = set(obj.keys())
-        if include is not None:
-            allowed_keys &= set(include)
-        if exclude is not None:
-            allowed_keys -= set(exclude)
-        for key, value in obj.items():
+        return {
+            jsonable_encoder(
+                key,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_none=exclude_none,
+                custom_encoder=custom_encoder,
+                sqlalchemy_safe=sqlalchemy_safe,
+            ): jsonable_encoder(
+                value,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_none=exclude_none,
+                custom_encoder=custom_encoder,
+                sqlalchemy_safe=sqlalchemy_safe,
+            )
+            for key, value in obj.items()
             if (
                 (
                     not sqlalchemy_safe
@@ -276,46 +286,29 @@ def jsonable_encoder(
                     or (not key.startswith("_sa"))
                 )
                 and (value is not None or not exclude_none)
-                and key in allowed_keys
-            ):
-                encoded_key = jsonable_encoder(
-                    key,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_none=exclude_none,
-                    custom_encoder=custom_encoder,
-                    sqlalchemy_safe=sqlalchemy_safe,
-                )
-                encoded_value = jsonable_encoder(
-                    value,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_none=exclude_none,
-                    custom_encoder=custom_encoder,
-                    sqlalchemy_safe=sqlalchemy_safe,
-                )
-                encoded_dict[encoded_key] = encoded_value
-        return encoded_dict
-    if isinstance(obj, (list, set, frozenset, GeneratorType, tuple, deque)):
-        encoded_list = []
-        for item in obj:
-            encoded_list.append(
-                jsonable_encoder(
-                    item,
-                    include=include,
-                    exclude=exclude,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    exclude_none=exclude_none,
-                    custom_encoder=custom_encoder,
-                    sqlalchemy_safe=sqlalchemy_safe,
-                )
+                and (include is None or key in include)
+                and (exclude is None or key not in exclude)
             )
-        return encoded_list
+        }
+    if isinstance(obj, (list, set, frozenset, GeneratorType, tuple, deque)):
+        return [
+            jsonable_encoder(
+                item,
+                include=include,
+                exclude=exclude,
+                by_alias=by_alias,
+                exclude_unset=exclude_unset,
+                exclude_defaults=exclude_defaults,
+                exclude_none=exclude_none,
+                custom_encoder=custom_encoder,
+                sqlalchemy_safe=sqlalchemy_safe,
+            )
+            for item in obj
+        ]
 
-    if type(obj) in ENCODERS_BY_TYPE:
-        return ENCODERS_BY_TYPE[type(obj)](obj)
+    encoder_by_type_instance = ENCODERS_BY_TYPE.get(type(obj))
+    if encoder_by_type_instance is not None:
+        return encoder_by_type_instance(obj)
     for encoder, classes_tuple in encoders_by_class_tuples.items():
         if isinstance(obj, classes_tuple):
             return encoder(obj)
