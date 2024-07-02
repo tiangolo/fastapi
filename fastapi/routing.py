@@ -3,14 +3,16 @@ import dataclasses
 import email.message
 import inspect
 import json
-from contextlib import AsyncExitStack
+from contextlib import AsyncExitStack, asynccontextmanager
 from enum import Enum, IntEnum
 from typing import (
     Any,
+    AsyncIterator,
     Callable,
     Coroutine,
     Dict,
     List,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -67,7 +69,7 @@ from starlette.routing import (
     websocket_session,
 )
 from starlette.routing import Mount as Mount  # noqa
-from starlette.types import ASGIApp, Lifespan, Scope
+from starlette.types import AppType, ASGIApp, Lifespan, Scope
 from starlette.websockets import WebSocket
 from typing_extensions import Annotated, Doc, deprecated
 
@@ -117,6 +119,18 @@ def _prepare_response_content(
     elif dataclasses.is_dataclass(res):
         return dataclasses.asdict(res)
     return res
+
+
+def _merge_lifespan_context(
+    original_context: Lifespan[Any], nested_context: Lifespan[Any]
+) -> Lifespan[Any]:
+    @asynccontextmanager
+    async def merged_lifespan(app: AppType) -> AsyncIterator[Mapping[str, Any]]:
+        async with original_context(app) as maybe_self_context:
+            async with nested_context(app) as maybe_nested_context:
+                yield {**(maybe_self_context or {}), **(maybe_nested_context or {})}
+
+    return merged_lifespan
 
 
 async def serialize_response(
@@ -1308,6 +1322,10 @@ class APIRouter(routing.Router):
             self.add_event_handler("startup", handler)
         for handler in router.on_shutdown:
             self.add_event_handler("shutdown", handler)
+        self.lifespan_context = _merge_lifespan_context(
+            self.lifespan_context,
+            router.lifespan_context,
+        )
 
     def get(
         self,
