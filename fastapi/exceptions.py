@@ -1,9 +1,22 @@
-from typing import Any, Dict, Optional, Sequence, Type, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Type, Union
 
 from pydantic import BaseModel, create_model
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.exceptions import WebSocketException as StarletteWebSocketException
-from typing_extensions import Annotated, Doc
+from typing_extensions import Annotated, Doc, TypedDict
+
+
+class ErrorDetails(TypedDict):
+    """
+    The common subset shared by `ErrorDict` in Pydantic V1[0] and `ErrorDetails` in Pydantic V2[1].
+
+    [0] https://github.com/pydantic/pydantic/blob/4d7bef62aeff10985fe67d13477fe666b13ba070/pydantic/v1/error_wrappers.py#L21-L22
+    [1] https://github.com/pydantic/pydantic-core/blob/e1fc99dd3207157aad77defc20ab6873fd268b5b/python/pydantic_core/__init__.py#L73-L91
+    """
+
+    loc: Tuple[Union[int, str], ...]
+    msg: str
+    type: str
 
 
 class HTTPException(StarletteHTTPException):
@@ -147,15 +160,15 @@ class FastAPIError(RuntimeError):
 
 
 class ValidationException(Exception):
-    def __init__(self, errors: Sequence[Any]) -> None:
+    def __init__(self, errors: Sequence[ErrorDetails]) -> None:
         self._errors = errors
 
-    def errors(self) -> Sequence[Any]:
+    def errors(self) -> Sequence[ErrorDetails]:
         return self._errors
 
 
 class RequestValidationError(ValidationException):
-    def __init__(self, errors: Sequence[Any], *, body: Any = None) -> None:
+    def __init__(self, errors: Sequence[ErrorDetails], *, body: Any = None) -> None:
         super().__init__(errors)
         self.body = body
 
@@ -165,7 +178,7 @@ class WebSocketRequestValidationError(ValidationException):
 
 
 class ResponseValidationError(ValidationException):
-    def __init__(self, errors: Sequence[Any], *, body: Any = None) -> None:
+    def __init__(self, errors: Sequence[ErrorDetails], *, body: Any = None) -> None:
         super().__init__(errors)
         self.body = body
 
