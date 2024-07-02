@@ -29,6 +29,7 @@ from fastapi._compat import (
     copy_field_info,
     create_body_model,
     evaluate_forwardref,
+    field_annotation_is_root_model,
     field_annotation_is_scalar,
     get_annotation_from_field_info,
     get_missing_field_error,
@@ -414,7 +415,11 @@ def analyze_param(
             type_annotation
         ) or is_uploadfile_sequence_annotation(type_annotation):
             field_info = params.File(annotation=use_annotation, default=default_value)
-        elif not field_annotation_is_scalar(annotation=type_annotation):
+        elif (
+            not field_annotation_is_scalar(type_annotation)
+            # Root models by default regarded as bodies
+            or field_annotation_is_root_model(type_annotation)
+        ):
             field_info = params.Body(annotation=use_annotation, default=default_value)
         else:
             field_info = params.Query(annotation=use_annotation, default=default_value)
@@ -459,7 +464,9 @@ def is_body_param(*, param_field: ModelField, is_path_param: bool) -> bool:
             field=param_field
         ), "Path params must be of one of the supported types"
         return False
-    elif is_scalar_field(field=param_field):
+    elif is_scalar_field(field=param_field) and not isinstance(
+        param_field.field_info, params.Body
+    ):
         return False
     elif isinstance(
         param_field.field_info, (params.Query, params.Header)
