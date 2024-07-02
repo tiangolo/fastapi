@@ -136,9 +136,7 @@ FastAPI stands on the shoulders of giants:
 <div class="termy">
 
 ```console
-$ pip install fastapi
-
----> 100%
+pip install fastapi
 ```
 
 </div>
@@ -203,8 +201,10 @@ Run the server with:
 <div class="termy">
 
 ```console
-$ fastapi dev main.py
+fastapi dev main.py
+```
 
+```console
  ╭────────── FastAPI CLI - Development mode ───────────╮
  │                                                     │
  │  Serving at: http://127.0.0.1:8000                  │
