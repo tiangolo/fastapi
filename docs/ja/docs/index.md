@@ -14,14 +14,17 @@ hide:
     <em>FastAPI framework, high performance, easy to learn, fast to code, ready for production</em>
 </p>
 <p align="center">
-<a href="https://travis-ci.com/tiangolo/fastapi" target="_blank">
-    <img src="https://travis-ci.com/tiangolo/fastapi.svg?branch=master" alt="Build Status">
+<a href="https://github.com/tiangolo/fastapi/actions?query=workflow%3ATest+event%3Apush+branch%3Amaster" target="_blank">
+    <img src="https://github.com/tiangolo/fastapi/workflows/Test/badge.svg?event=push&branch=master" alt="Test">
 </a>
-<a href="https://codecov.io/gh/tiangolo/fastapi" target="_blank">
-    <img src="https://img.shields.io/codecov/c/github/tiangolo/fastapi" alt="Coverage">
+<a href="https://coverage-badge.samuelcolvin.workers.dev/redirect/tiangolo/fastapi" target="_blank">
+    <img src="https://coverage-badge.samuelcolvin.workers.dev/tiangolo/fastapi.svg" alt="Coverage">
 </a>
 <a href="https://pypi.org/project/fastapi" target="_blank">
-    <img src="https://badge.fury.io/py/fastapi.svg" alt="Package version">
+    <img src="https://img.shields.io/pypi/v/fastapi?color=%2334D058&label=pypi%20package" alt="Package version">
+</a>
+<a href="https://pypi.org/project/fastapi" target="_blank">
+    <img src="https://img.shields.io/pypi/pyversions/fastapi.svg?color=%2334D058" alt="Supported Python versions">
 </a>
 </p>
 
@@ -106,6 +109,12 @@ FastAPI は、Pythonの標準である型ヒントに基づいてPython 以降�
 
 ---
 
+"_本番環境に向けてPython APIを構築している人には、**FastAPI**を強くお勧めします。 **美しく設計され**、**簡単に使うことができ**、**拡張性も高い**ので、我々が行っているAPIファーストの開発戦略において**鍵となる役割**を担っており、Virtual TAC Engineerのような多くのサービスや自動化を牽引しています。_"
+
+<div style="text-align: right; margin-right: 10%;">Deon Pillsbury - <strong>Cisco</strong> <a href="https://www.linkedin.com/posts/deonpillsbury_cisco-cx-python-activity-6963242628536487936-trAp/" target="_blank"><small>(ref)</small></a></div>
+
+---
+
 ## **Typer**, the FastAPI of CLIs
 
 <a href="https://typer.tiangolo.com" target="_blank"><img src="https://typer.tiangolo.com/img/logo-margin/logo-margin-vector.svg" style="width: 20%;"></a>
@@ -133,18 +142,6 @@ $ pip install fastapi
 
 </div>
 
-本番環境では、<a href="https://www.uvicorn.org" class="external-link" target="_blank">Uvicorn</a> または、 <a href="https://gitlab.com/pgjones/hypercorn" class="external-link" target="_blank">Hypercorn</a>のような、 ASGI サーバーが必要になります。
-
-<div class="termy">
-
-```console
-$ pip install "uvicorn[standard]"
-
----> 100%
-```
-
-</div>
-
 ## アプリケーション例
 
 ### アプリケーションの作成
@@ -152,6 +149,8 @@ $ pip install "uvicorn[standard]"
 - `main.py` を作成し、以下のコードを入力します:
 
 ```Python
+from typing import Union
+
 from fastapi import FastAPI
 
 app = FastAPI()
@@ -163,7 +162,7 @@ def read_root():
 
 
 @app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
+def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 ```
 
@@ -172,7 +171,9 @@ def read_item(item_id: int, q: str = None):
 
 `async` / `await`を使用するときは、 `async def`を使います:
 
-```Python hl_lines="7 12"
+```Python hl_lines="9 14"
+from typing import Union
+
 from fastapi import FastAPI
 
 app = FastAPI()
@@ -184,7 +185,7 @@ async def read_root():
 
 
 @app.get("/items/{item_id}")
-async def read_item(item_id: int, q: str = None):
+async def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 ```
 
@@ -201,11 +202,24 @@ async def read_item(item_id: int, q: str = None):
 <div class="termy">
 
 ```console
-$ uvicorn main:app --reload
+$ fastapi dev main.py
 
+ ╭────────── FastAPI CLI - Development mode ───────────╮
+ │                                                     │
+ │  Serving at: http://127.0.0.1:8000                  │
+ │                                                     │
+ │  API docs: http://127.0.0.1:8000/docs               │
+ │                                                     │
+ │  Running in development mode, for production use:   │
+ │                                                     │
+ │  fastapi run                                        │
+ │                                                     │
+ ╰─────────────────────────────────────────────────────╯
+
+INFO:     Will watch for changes in these directories: ['/home/user/code/awesomeapp']
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     Started reloader process [28720]
-INFO:     Started server process [28722]
+INFO:     Started reloader process [2248755] using WatchFiles
+INFO:     Started server process [2248757]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 ```
@@ -213,13 +227,13 @@ INFO:     Application startup complete.
 </div>
 
 <details markdown="1">
-<summary><code>uvicorn main:app --reload</code>コマンドについて</summary>
+<summary><code>fastapi dev main.py</code>コマンドについて</summary>
 
-`uvicorn main:app`コマンドは以下の項目を参照します:
+`fastapi dev` コマンドは、`main.py`ファイルを読み込み、その中の **FastAPI** アプリを検出し、<a href="https://www.uvicorn.org" class="external-link" target="_blank">Uvicorn</a>を使用してサーバーを起動します。
 
-- `main`: `main.py`ファイル (Python "モジュール")
-- `app`: `main.py` の`app = FastAPI()`の行で生成されたオブジェクト
-- `--reload`: コードを変更したらサーバーを再起動します。このオプションは開発環境でのみ使用します
+デフォルトでは、`fastapi dev` はローカル開発用にオートリロードが有効化された状態で起動します。
+
+詳しくは、<a href="https://fastapi.tiangolo.com/fastapi-cli/" target="_blank">FastAPI CLI ドキュメント</a>を参照してください。
 
 </details>
 
@@ -262,7 +276,9 @@ INFO:     Application startup complete.
 
 Pydantic によって、Python の標準的な型を使ってボディを宣言します。
 
-```Python hl_lines="2  7 8 9 10  23 24 25"
+```Python hl_lines="4  9-12  25-27"
+from typing import Union
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -272,7 +288,7 @@ app = FastAPI()
 class Item(BaseModel):
     name: str
     price: float
-    is_offer: bool = None
+    is_offer: Union[bool, None] = None
 
 
 @app.get("/")
@@ -281,7 +297,7 @@ def read_root():
 
 
 @app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
+def read_item(item_id: int, q: Union[str, None] = None):
     return {"item_id": item_id, "q": q}
 
 
@@ -290,7 +306,7 @@ def update_item(item_id: int, item: Item):
     return {"item_name": item.name, "item_id": item_id}
 ```
 
-サーバーは自動でリロードされます。(上述の`uvicorn`コマンドで`--reload`オプションを追加しているからです。)
+`fastapi dev` で立ち上げたサーバは、自動的に更新されるはずです。
 
 ### 自動対話型の API ドキュメントのアップグレード
 
@@ -324,7 +340,7 @@ def update_item(item_id: int, item: Item):
 
 新しい構文や特定のライブラリのメソッドやクラスなどを覚える必要はありません。
 
-単なる標準的な**3.8 以降の Python**です。
+単なる標準的な**Python**です。
 
 例えば、`int`の場合:
 
@@ -420,17 +436,17 @@ item: Item
 - 非常に強力で使いやすい <abbr title="also known as components, resources, providers, services, injectables">**依存性注入**</abbr>システム。
 - **JWT トークン**を用いた **OAuth2** や **HTTP Basic 認証** のサポートを含む、セキュリティと認証。
 - **深くネストされた JSON モデル**を宣言するためのより高度な（しかし同様に簡単な）技術（Pydantic のおかげです）。
+- <a href="https://strawberry.rocks" class="external-link" target="_blank">Strawberry</a> やその他のライブラリを用いた **GraphQL** との統合。
 - 以下のようなたくさんのおまけ機能(Starlette のおかげです):
   - **WebSockets**
-  - **GraphQL**
-  - `httpx` や `pytest`をもとにした極限に簡単なテスト
+  - HTTPX や `pytest`をもとにした極限に簡単なテスト
   - **CORS**
   - **クッキーセッション**
   - ...などなど。
 
 ## パフォーマンス
 
-独立した TechEmpower のベンチマークでは、Uvicorn で動作する**FastAPI**アプリケーションが、<a href="https://www.techempower.com/benchmarks/#section=test&runid=7464e520-0dc2-473d-bd34-dbdfd7e85911&hw=ph&test=query&l=zijzen-7" class="external-link" target="_blank">Python フレームワークの中で最も高速なものの 1 つ</a>であり、Starlette と Uvicorn（FastAPI で内部的に使用されています）にのみ下回っていると示されています。
+独立した TechEmpower のベンチマークでは、Uvicorn で動作する**FastAPI**アプリケーションが、<a href="https://www.techempower.com/benchmarks/#section=test&runid=7464e520-0dc2-473d-bd34-dbdfd7e85911&hw=ph&test=query&l=zijzen-7" class="external-link" target="_blank">Python フレームワークの中で最も高速なものの 1 つ</a>であり、Starlette と Uvicorn（FastAPI で内部的に使用されています）にのみ下回っていると示されています。(*)
 
 詳細は<a href="https://fastapi.tiangolo.com/benchmarks/" class="internal-link" target="_blank">ベンチマーク</a>セクションをご覧ください。
 
@@ -439,23 +455,41 @@ item: Item
 Pydantic によって使用されるもの:
 
 - <a href="https://github.com/JoshData/python-email-validator" target="_blank"><code>email_validator</code></a> - E メールの検証
+* <a href="https://docs.pydantic.dev/latest/usage/pydantic_settings/" target="_blank"><code>pydantic-settings</code></a> - 設定管理のため
+* <a href="https://docs.pydantic.dev/latest/usage/types/extra_types/extra_types/" target="_blank"><code>pydantic-extra-types</code></a> - Pydantic によって使用される追加の型
 
 Starlette によって使用されるもの:
 
 - <a href="https://www.python-httpx.org" target="_blank"><code>httpx</code></a> - `TestClient`を使用するために必要です。
 - <a href="https://jinja.palletsprojects.com" target="_blank"><code>jinja2</code></a> - デフォルトのテンプレート設定を使用する場合は必要です。
 - <a href="https://github.com/Kludex/python-multipart" target="_blank"><code>python-multipart</code></a> - <abbr title="converting the string that comes from an HTTP request into Python data">"parsing"</abbr>`request.form()`からの変換をサポートしたい場合は必要です。
-- <a href="https://pythonhosted.org/itsdangerous/" target="_blank"><code>itsdangerous</code></a> - `SessionMiddleware` サポートのためには必要です。
-- <a href="https://pyyaml.org/wiki/PyYAMLDocumentation" target="_blank"><code>pyyaml</code></a> - Starlette の `SchemaGenerator` サポートのために必要です。 (FastAPI では必要ないでしょう。)
-- <a href="https://graphene-python.org/" target="_blank"><code>graphene</code></a> - `GraphQLApp` サポートのためには必要です。
 
 FastAPI / Starlette に使用されるもの:
 
 - <a href="https://www.uvicorn.org" target="_blank"><code>uvicorn</code></a> - アプリケーションをロードしてサーブするサーバーのため。
 - <a href="https://github.com/ijl/orjson" target="_blank"><code>orjson</code></a> - `ORJSONResponse`を使用したい場合は必要です。
 - <a href="https://github.com/esnme/ultrajson" target="_blank"><code>ujson</code></a> - `UJSONResponse`を使用する場合は必須です。
+- `fastapi-cli` - `fastapi` コマンドの提供のため
 
-これらは全て `pip install fastapi[all]`でインストールできます。
+`fastapi` をインストールすると、これら標準的な依存関係も付属します。
+
+## `fastapi-slim`
+
+標準的な依存関係をインストールしたくない場合は、代わりに `fastapi-slim` をインストールしてください。
+
+以下のコマンドでインストールした場合：
+
+```bash
+pip install fastapi
+```
+
+...以下のコマンドと同じコードと依存関係が含まれます：
+
+```bash
+pip install "fastapi-slim[standard]"
+```
+
+標準的な依存関係は、上述のとおりです。
 
 ## ライセンス
 
