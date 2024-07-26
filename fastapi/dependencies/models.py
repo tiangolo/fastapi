@@ -1,6 +1,6 @@
 from typing import Any, Callable, List, Optional, Sequence
-import anyio
 
+import anyio
 from fastapi._compat import ModelField
 from fastapi.security.base import SecurityBase
 
