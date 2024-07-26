@@ -25,7 +25,7 @@ async def run_in_threadpool(
     *args: _P.args,
     **kwargs: _P.kwargs,
 ) -> _T:
-    _limiter = kwargs.pop('_limiter', None) if kwargs else None
+    _limiter = kwargs.pop("_limiter", None) if kwargs else None
     if kwargs:  # pragma: no cover
         # run_sync doesn't accept 'kwargs', so bind them in here
         func = functools.partial(func, **kwargs)
