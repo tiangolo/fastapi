@@ -99,7 +99,7 @@ Esto te mostrará un JSON que comienza con algo como:
 
 ```JSON
 {
-    "openapi": "3.0.2",
+    "openapi": "3.1.0",
     "info": {
         "title": "FastAPI",
         "version": "0.1.0"
@@ -141,13 +141,13 @@ También podrías usarlo para generar código automáticamente, para los cliente
 
     También puedes usar toda la funcionalidad de <a href="https://www.starlette.io/" class="external-link" target="_blank">Starlette</a>.
 
-### Paso 2: crea un "instance" de `FastAPI`
+### Paso 2: crea una "instance" de `FastAPI`
 
 ```Python hl_lines="3"
 {!../../../docs_src/first_steps/tutorial001.py!}
 ```
 
-Aquí la variable `app` será un instance de la clase `FastAPI`.
+Aquí la variable `app` será una instance de la clase `FastAPI`.
 
 Este será el punto de interacción principal para crear todo tu API.
 
@@ -163,7 +163,7 @@ $ uvicorn main:app --reload
 
 </div>
 
-Si creas un app como:
+Si creas una app como:
 
 ```Python hl_lines="3"
 {!../../../docs_src/first_steps/tutorial002.py!}
@@ -327,7 +327,7 @@ Hay muchos objetos y modelos que pueden ser convertidos automáticamente a JSON 
 ## Repaso
 
 * Importa `FastAPI`.
-* Crea un instance de `app`.
+* Crea una instance de `app`.
 * Escribe un **decorador de operación de path** (como `@app.get("/")`).
 * Escribe una **función de la operación de path** (como `def root(): ...` arriba).
 * Corre el servidor de desarrollo (como `uvicorn main:app --reload`).
