@@ -8,6 +8,7 @@ class SecurityRequirement:
     def __init__(
         self, security_scheme: SecurityBase, scopes: Optional[Sequence[str]] = None
     ):
+        """Initialize an instance of SecurityRequirement class."""
         self.security_scheme = security_scheme
         self.scopes = scopes
 
@@ -35,6 +36,7 @@ class Dependant:
         use_cache: bool = True,
         path: Optional[str] = None,
     ) -> None:
+        """Initialize an instance of Dependant class."""
         self.path_params = path_params or []
         self.query_params = query_params or []
         self.header_params = header_params or []
