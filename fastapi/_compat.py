@@ -47,7 +47,7 @@ sequence_types = tuple(sequence_annotation_to_type.keys())
 
 if PYDANTIC_V2:
     from pydantic import PydanticSchemaGenerationError as PydanticSchemaGenerationError
-    from pydantic import TypeAdapter
+    from pydantic import RootModel, TypeAdapter
     from pydantic import ValidationError as ValidationError
     from pydantic._internal._schema_generation_shared import (  # type: ignore[attr-defined]
         GetJsonSchemaHandler as GetJsonSchemaHandler,
@@ -232,11 +232,7 @@ if PYDANTIC_V2:
         return field_mapping, definitions  # type: ignore[return-value]
 
     def is_scalar_field(field: ModelField) -> bool:
-        from fastapi import params
-
-        return field_annotation_is_scalar(
-            field.field_info.annotation
-        ) and not isinstance(field.field_info, params.Body)
+        return field_annotation_is_scalar(field.field_info.annotation)
 
     def is_sequence_field(field: ModelField) -> bool:
         return field_annotation_is_sequence(field.field_info.annotation)
@@ -278,6 +274,11 @@ if PYDANTIC_V2:
         field_params = {f.name: (f.field_info.annotation, f.field_info) for f in fields}
         BodyModel: Type[BaseModel] = create_model(model_name, **field_params)  # type: ignore[call-overload]
         return BodyModel
+
+    def root_model_inner_type(annotation: Any) -> Any:
+        if lenient_issubclass(annotation, RootModel):
+            return annotation.model_fields["root"].annotation
+        return None
 
 else:
     from fastapi.openapi.constants import REF_PREFIX as REF_PREFIX
@@ -386,6 +387,12 @@ else:
 
     def is_pv1_scalar_field(field: ModelField) -> bool:
         from fastapi import params
+
+        if (
+            lenient_issubclass(field.type_, BaseModel)
+            and "__root__" in field.type_.__fields__
+        ):
+            return is_pv1_scalar_field(field.type_.__fields__["__root__"])
 
         field_info = field.field_info
         if not (
@@ -513,6 +520,14 @@ else:
             BodyModel.__fields__[f.name] = f  # type: ignore[index]
         return BodyModel
 
+    def root_model_inner_type(annotation: Any) -> Any:
+        if (
+            lenient_issubclass(annotation, BaseModel)
+            and "__root__" in annotation.__fields__
+        ):
+            return annotation.__fields__["__root__"].annotation
+        return None
+
 
 def _regenerate_error_with_loc(
     *, errors: Sequence[Any], loc_prefix: Tuple[Union[str, int], ...]
@@ -549,10 +564,21 @@ def _annotation_is_complex(annotation: Union[Type[Any], None]) -> bool:
     )
 
 
+def field_annotation_is_root_model(annotation: Union[Type[Any], None]) -> bool:
+    origin = get_origin(annotation)
+    if origin is Union or origin is UnionType:
+        return any(field_annotation_is_root_model(arg) for arg in get_args(annotation))
+
+    return root_model_inner_type(annotation) is not None
+
+
 def field_annotation_is_complex(annotation: Union[Type[Any], None]) -> bool:
     origin = get_origin(annotation)
     if origin is Union or origin is UnionType:
         return any(field_annotation_is_complex(arg) for arg in get_args(annotation))
+
+    if inner := root_model_inner_type(annotation):
+        return field_annotation_is_complex(inner)
 
     return (
         _annotation_is_complex(annotation)
