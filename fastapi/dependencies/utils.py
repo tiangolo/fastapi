@@ -24,6 +24,7 @@ from typing import (
     cast,
     get_args,
     get_origin,
+    get_type_hints,
 )
 
 from fastapi import params
@@ -291,11 +292,18 @@ def get_dependant(
     path_param_names = get_path_param_names(path)
     endpoint_signature = get_typed_signature(call)
     signature_params = endpoint_signature.parameters
+    model_annotations: dict[str, Any] = {}
+    if lenient_issubclass(call, BaseModel):
+        try:
+            model_annotations = get_type_hints(call, include_extras=True)
+        except Exception:
+            # Keep the standard signature-based path when annotations cannot be resolved.
+            pass
     for param_name, param in signature_params.items():
         is_path_param = param_name in path_param_names
         param_details = analyze_param(
             param_name=param_name,
-            annotation=param.annotation,
+            annotation=model_annotations.get(param_name, param.annotation),
             value=param.default,
             is_path_param=is_path_param,
         )
